@@ -592,10 +592,13 @@ namespace Cpu {
 			if (not redraw) return "";
 			string out;
 			const int button_y = cpu_bottom ? y + height - 1 : y;
-			out += box;
+			// termux-noroot: the borderless header has no ─ line underneath to absorb redraws, so
+			// wipe the whole row first; otherwise a shortened segment (e.g. "1000ms" -> "900ms")
+			// redraws one column to the right and leaves a stale title bracket behind (┐┐).
+			out += Mv::to(button_y, x) + string(width - 1, ' ');
 			out += Mv::to(button_y, x + 10) + title_left + Theme::c("hi_fg") + Fx::b + 'm' + Theme::c("title") + "enu" + Fx::ub + title_right;
 			Input::mouse_mappings["m"] = {button_y, x + 11, 1, 4};
-			out += Mv::to(button_y, x + 16) + title_left + Theme::c("hi_fg") + Fx::b + 'p' + Theme::c("title") + "preset "
+			out += Mv::to(button_y, x + 16) + title_left + Theme::c("hi_fg") + Fx::b + 'p' + Theme::c("title") + "reset "
 				+ (!Config::current_preset.has_value() ? "*" : to_string(Config::current_preset.value())) + Fx::ub + title_right;
 			Input::mouse_mappings["p"] = {button_y, x + 17, 1, 8};
 			const string update = to_string(Config::getI("update_ms")) + "ms";
