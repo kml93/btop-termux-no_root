@@ -2807,8 +2807,10 @@ namespace Net {
 			//? Get total received and transmitted bytes + device address if no ip was found
 			for (const auto& iface : interfaces) {
 				auto& netif = net.at(iface);
-				if (netif.ipv4.empty() and netif.ipv6.empty())
-					netif.ipv4 = readfile("/sys/class/net/" + iface + "/address");
+				if (netif.ipv4.empty() and netif.ipv6.empty()) {
+					try { netif.ipv4 = readfile("/sys/class/net/" + iface + "/address"); }
+					catch (const std::filesystem::filesystem_error&) {}
+				}
 
 				for (const string dir : {"download", "upload"}) {
 					const fs::path sys_file = "/sys/class/net/" + iface + "/statistics/" + (dir == "download" ? "rx_bytes" : "tx_bytes");
@@ -2819,6 +2821,7 @@ namespace Net {
 					try { val = stoull(readfile(sys_file, "0")); }
 					catch (const std::invalid_argument&) {}
 					catch (const std::out_of_range&) {}
+					catch (const std::filesystem::filesystem_error&) {}
 
 					//? Update speed, total and top values
 					if (val < saved_stat.last) {
