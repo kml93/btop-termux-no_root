@@ -305,8 +305,8 @@ namespace Draw {
 
 	bool update_clock(bool force) {
 		const auto& clock_format = Config::getS("clock_format");
-		if (not Cpu::shown or clock_format.empty()) {
-			if (clock_format.empty() and not Global::clock.empty()) Global::clock.clear();
+		if (clock_format.empty()) {
+			if (not Global::clock.empty()) Global::clock.clear();
 			return false;
 		}
 
@@ -331,11 +331,11 @@ namespace Draw {
 
 		auto& out = Global::clock;
 		auto cpu_bottom = Config::getB("cpu_bottom");
-		const auto& x = Cpu::x;
-		const auto y = (cpu_bottom ? Cpu::y + Cpu::height - 1 : Cpu::y);
-		const auto& width = Cpu::width;
-		const auto& title_left = (cpu_bottom ? Symbols::title_left_down : Symbols::title_left);
-		const auto& title_right = (cpu_bottom ? Symbols::title_right_down : Symbols::title_right);
+		const int x = (Cpu::shown ? int(Cpu::x) : 1);
+		const int y = (Cpu::shown ? (cpu_bottom ? int(Cpu::y) + int(Cpu::height) - 1 : int(Cpu::y)) : 1);
+		const int width = (Cpu::shown ? int(Cpu::width) : int(Term::width));
+		const auto& title_left = ((Cpu::shown and cpu_bottom) ? Symbols::title_left_down : Symbols::title_left);
+		const auto& title_right = ((Cpu::shown and cpu_bottom) ? Symbols::title_right_down : Symbols::title_right);
 
 
 		for (const auto& [c_format, replacement] : clock_custom_format) {
