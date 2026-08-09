@@ -323,8 +323,7 @@ namespace Config {
 		{"swap_disk", true},
 		{"show_disks", true},
 		{"only_physical", true},
-		// There is no /etc/fstab on Android.
-		{"use_fstab", false},
+		{"use_fstab", true},
 		{"zfs_hide_datasets", false},
 		{"show_io_stat", true},
 		{"io_mode", false},
