@@ -251,10 +251,10 @@ namespace Config {
 
 	std::unordered_map<std::string_view, string> strings = {
 		{"color_theme", "Default"},
-		{"shown_boxes", "mem net proc"},
+		{"shown_boxes", "cpu mem net proc"},
 		{"graph_symbol", "braille"},
 		{"disable_presets", "Off"},
-		{"presets", "proc:0:default mem:0:default,net:0:default net:0:tty"},
+		{"presets", "cpu:1:default,proc:0:default cpu:0:default,mem:0:default,net:0:default cpu:0:block,net:0:tty"},
 		{"graph_symbol_cpu", "default"},
 		{"graph_symbol_gpu", "default"},
 		{"graph_symbol_mem", "default"},
@@ -449,7 +449,7 @@ namespace Config {
 	vector<string> available_batteries = {"Auto"};
 
 	vector<string> current_boxes;
-	vector<string> preset_list = {"mem:0:default,net:0:default,proc:0:default"};
+	vector<string> preset_list = {"cpu:0:default,mem:0:default,net:0:default,proc:0:default"};
 	std::optional<int> current_preset;
 
 	bool presetsValid(const string& presets) {

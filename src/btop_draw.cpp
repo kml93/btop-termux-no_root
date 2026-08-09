@@ -2289,6 +2289,7 @@ namespace Draw {
 			if (height <= Term::height-gpus_extra_height) height += gpus_extra_height;
 		#else
 			height = max(8, (int)ceil((double)Term::height * (trim(boxes) == "cpu" ? 100 : height_p) / 100));
+			if (trim(boxes) == "cpu") height = 3; // termux-noroot: slim CPU header (CPU data flat-zero without /proc/stat)
 		#endif
 			x = 1;
 			y = cpu_bottom ? Term::height - height + 1 : 1;
