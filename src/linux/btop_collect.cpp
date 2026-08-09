@@ -55,6 +55,7 @@ tab-size = 4
 #include "../btop_log.hpp"
 #include "../btop_shared.hpp"
 #include "../btop_tools.hpp"
+#include "btop_netlink.hpp"
 
 #if defined(GPU_SUPPORT)
 	// Redefining C++ keywords fortunately has a warning in clang, however it's unavoidable here
@@ -2759,6 +2760,9 @@ namespace Net {
 			enum { IPBUFFER_MAXSIZE = INET6_ADDRSTRLEN }; // manually using the known biggest value, guarded by the above static_assert
 			char ip[IPBUFFER_MAXSIZE];
 			interfaces.clear();
+#if defined(__ANDROID__)
+			const auto nl_stats = android_netlink_stats();
+#endif
 			string ipv4, ipv6;
 
 			//? Iteration over all items in getifaddrs() list
@@ -2818,10 +2822,19 @@ namespace Net {
 					auto& bandwidth = netif.bandwidth.at(dir);
 
 					uint64_t val{};
-					try { val = stoull(readfile(sys_file, "0")); }
-					catch (const std::invalid_argument&) {}
-					catch (const std::out_of_range&) {}
-					catch (const std::filesystem::filesystem_error&) {}
+#if defined(__ANDROID__)
+					{
+						const auto it = nl_stats.find(iface);
+						if (it != nl_stats.end()) val = (dir == "download") ? it->second.first : it->second.second;
+					}
+					if (val == 0)
+#endif
+					{
+						try { val = stoull(readfile(sys_file, "0")); }
+						catch (const std::invalid_argument&) {}
+						catch (const std::out_of_range&) {}
+						catch (const std::filesystem::filesystem_error&) {}
+					}
 
 					//? Update speed, total and top values
 					if (val < saved_stat.last) {
@@ -2891,11 +2904,14 @@ namespace Net {
 				selected_iface.clear();
 				//? Try to set to a connected interface
 				for (const auto& iface : sorted_interfaces) {
-					if (net.at(iface).connected) {
+					if (iface != "lo" and net.at(iface).connected) {
 						selected_iface = iface;
 						break;
 					}
 				}
+				if (selected_iface.empty())
+					for (const auto& iface : sorted_interfaces)
+						if (iface != "lo") { selected_iface = iface; break; }
 				//? If no interface is connected set to first available
 				if (selected_iface.empty() and not sorted_interfaces.empty()) selected_iface = sorted_interfaces.at(0);
 				else if (sorted_interfaces.empty()) return empty_net;
