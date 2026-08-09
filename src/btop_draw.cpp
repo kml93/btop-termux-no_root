@@ -546,7 +546,9 @@ namespace Cpu {
 		bool data_same
 	) {
 		if (Runner::stopping) return "";
-		if (height <= 4) return ""; // termux-noroot: slim header (height forced to 3) -> draw no CPU content (cores/graphs/meter); external border + clock come from calcSizes (Cpu::box) + Global::clock, independent of this function
+		// termux-noroot: the CPU box is a borderless 1-line header (height forced to 1 in
+		// calcSizes). Handling is below, after title_left/title_right are defined, so the
+		// menu/preset/refresh buttons still render; only graphs/meter/cores are dropped.
 		if (force_redraw) redraw = true;
 		bool show_temps = (Config::getB("check_temp") and got_sensors);
 		bool show_watts = (Config::getB("show_cpu_watts") and supports_watts);
@@ -579,6 +581,31 @@ namespace Cpu {
 
 		const string& title_left = Theme::c("cpu_box") + (cpu_bottom ? Symbols::title_left_down : Symbols::title_left);
 		const string& title_right = Theme::c("cpu_box") + (cpu_bottom ? Symbols::title_right_down : Symbols::title_right);
+
+		// termux-noroot: borderless 1-line header (height == 1, forced in calcSizes). CPU data is
+		// flat-zero without /proc/stat, so emit only the title-segment buttons (menu/preset/refresh)
+		// on this single row. There is no box border (calcSizes leaves Cpu::box empty) and no
+		// graphs/meter/cores. The centered clock is drawn by update_clock (Global::clock),
+		// independent of this function. Mirrors the redraw-block button code below so the native
+		// title-segment look is preserved (minus the "¹cpu" label and the surrounding box).
+		if (height <= 4) {
+			if (not redraw) return "";
+			string out;
+			const int button_y = cpu_bottom ? y + height - 1 : y;
+			out += box;
+			out += Mv::to(button_y, x + 10) + title_left + Theme::c("hi_fg") + Fx::b + 'm' + Theme::c("title") + "enu" + Fx::ub + title_right;
+			Input::mouse_mappings["m"] = {button_y, x + 11, 1, 4};
+			out += Mv::to(button_y, x + 16) + title_left + Theme::c("hi_fg") + Fx::b + 'p' + Theme::c("title") + "preset "
+				+ (!Config::current_preset.has_value() ? "*" : to_string(Config::current_preset.value())) + Fx::ub + title_right;
+			Input::mouse_mappings["p"] = {button_y, x + 17, 1, 8};
+			const string update = to_string(Config::getI("update_ms")) + "ms";
+			out += Mv::to(button_y, x + width - update.size() - 8) + title_left + Fx::b + Theme::c("hi_fg") + "- " + Theme::c("title") + update
+				+ Theme::c("hi_fg") + " +" + Fx::ub + title_right;
+			Input::mouse_mappings["-"] = {button_y, x + width - (int)update.size() - 7, 1, 2};
+			Input::mouse_mappings["+"] = {button_y, x + width - 5, 1, 2};
+			redraw = false;
+			return out + Fx::reset;
+		}
 		static int bat_pos = 0, bat_len = 0;
 		if (safeVal(cpu.cpu_percent, "total"s).empty()
 			or safeVal(cpu.core_percent, 0).empty()
@@ -2285,13 +2312,20 @@ namespace Draw {
 			if (Gpu::shown != 0 and not (Mem::shown or Net::shown or Proc::shown)) {
 				height = Term::height - Gpu::total_height - gpus_extra_height;
 			} else {
-				height = max(8, (int)ceil((double)Term::height * (trim(boxes) == "cpu" ? 100 : height_p/(Gpu::shown+1) + (Gpu::shown != 0)*5) / 100));
+				height = max(8, (int)ceil((double)Term::height * (height_p/(Gpu::shown+1) + (Gpu::shown != 0)*5) / 100));
 			}
 			if (height <= Term::height-gpus_extra_height) height += gpus_extra_height;
 		#else
-			height = max(8, (int)ceil((double)Term::height * (trim(boxes) == "cpu" ? 100 : height_p) / 100));
-			if (trim(boxes) == "cpu") height = 3; // termux-noroot: slim CPU header (CPU data flat-zero without /proc/stat)
+			height = max(8, (int)ceil((double)Term::height * height_p / 100));
 		#endif
+			// termux-noroot: CPU% is flat-zero without /proc/stat, so the CPU box carries no data.
+			// Collapse it to a single-row borderless header (clock + menu/preset/refresh buttons).
+			// Forced AFTER the percentage sizing above (which left it at ~32% / ~16 rows) and for
+			// BOTH GPU and non-GPU builds. NB: `boxes` here is the FULL shown_boxes string
+			// (e.g. "cpu mem net proc"), so a previous `trim(boxes)=="cpu"` guard never matched,
+			// which is why the height was never reduced before this line. height=1 => mem/net/proc
+			// start at row 2 (Cpu::height+1) and fill the remaining rows; no gap, no overlap.
+			height = 1;
 			x = 1;
 			y = cpu_bottom ? Term::height - height + 1 : 1;
 
@@ -2327,7 +2361,10 @@ namespace Draw {
 			b_x = x + width - b_width - 1;
 			b_y = y + ceil((double)(height - 2) / 2) - ceil((double)b_height / 2) + 1;
 
-			box = createBox(x, y, width, height, Theme::c("cpu_box"), true, (cpu_bottom ? "" : "cpu"), (cpu_bottom ? "cpu" : ""), 1);
+			// termux-noroot: borderless 1-line header -> no box outline and no "¹cpu" title.
+			// The clock (update_clock) and the menu/preset/refresh buttons (Cpu::draw) are drawn
+			// directly onto this single row; mem/net/proc sit just below it (row Cpu::height+1).
+			box = "";
 
 			auto& custom = Config::getS("custom_cpu_name");
 			static const bool hasCpuHz = not Cpu::get_cpuHz().empty();
