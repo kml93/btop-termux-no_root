@@ -238,6 +238,7 @@ namespace Input {
 				}
 				else if (key.size() == 1 and isint(key)) {
 					auto intKey = std::atoi(key.data());
+				if (intKey == 1) return;   // termux-noroot: CPU box is flat-zero without /proc/stat; disable '1' toggle
 				#ifdef GPU_SUPPORT
 					static const array<string, 10> boxes = {"gpu5", "cpu", "mem", "net", "proc", "gpu0", "gpu1", "gpu2", "gpu3", "gpu4"};
 					if ((intKey == 0 and Gpu::count < 5) or (intKey >= 5 and intKey - 4 > Gpu::count))

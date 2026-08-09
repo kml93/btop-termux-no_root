@@ -1035,7 +1035,7 @@ static auto configure_tty_mode(std::optional<bool> force_tty) {
 	}
 
 	if (not Config::set_boxes(Config::getS("shown_boxes"))) {
-		Config::set_boxes("cpu mem net proc");
+		Config::set_boxes("mem net proc");
 		Config::set("shown_boxes", "cpu mem net proc"s);
 	}
 
