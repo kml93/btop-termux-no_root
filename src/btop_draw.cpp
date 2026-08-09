@@ -2339,7 +2339,7 @@ namespace Draw {
 					(custom.empty() ? Cpu::cpuName : custom),
 					b_width - (Config::getB("show_cpu_freq") and hasCpuHz ? (freq_range ? 24 : 14) : 5)
 			);
-			box += createBox(b_x, b_y, b_width, b_height, "", false, cpu_title);
+			if (height > 4) box += createBox(b_x, b_y, b_width, b_height, "", false, cpu_title); // termux-noroot: slim header -> no inner (cores) box
 		}
 
 	#ifdef GPU_SUPPORT
