@@ -486,7 +486,7 @@ namespace Cpu {
 				cpuinfo.ignore(1);
 				getline(cpuinfo, name);
 			}
-			else if (fs::exists("/sys/devices")) {
+			else if (fs::exists("/sys/devices") and access("/sys/devices", R_OK) != -1) {
 				for (const auto& d : fs::directory_iterator("/sys/devices")) {
 					if (string(d.path().filename()).starts_with("arm")) {
 						name = d.path().filename();
@@ -539,7 +539,7 @@ namespace Cpu {
 					}
 				}
 			}
-			if (not got_coretemp and fs::exists(fs::path("/sys/devices/platform/coretemp.0/hwmon"))) {
+			if (not got_coretemp and fs::exists(fs::path("/sys/devices/platform/coretemp.0/hwmon")) and access("/sys/devices/platform/coretemp.0/hwmon", R_OK) != -1) {
 				for (auto& d : fs::directory_iterator(fs::path("/sys/devices/platform/coretemp.0/hwmon"))) {
 					fs::path add_path = fs::canonical(d.path());
 
@@ -769,7 +769,7 @@ namespace Cpu {
 			}
 
 			if (hz <= 1 or hz >= 999999999)
-				throw std::runtime_error("Failed to read /sys/devices/system/cpu/cpufreq/policy and /proc/cpuinfo.");
+				Logger::warning("Could not determine CPU frequency (cpufreq/cpuinfo unavailable); defaulting to 0."); hz = 0;
 
 			cpuhz = normalize_frequency(hz);
 
@@ -869,7 +869,7 @@ namespace Cpu {
 		//? Get paths to needed files and check for valid values on first run
 		if (batteries.empty() and has_battery) {
 			try {
-				if (fs::exists("/sys/class/power_supply")) {
+				if (fs::exists("/sys/class/power_supply") and access("/sys/class/power_supply", R_OK) != -1) {
 					for (const auto& d : fs::directory_iterator("/sys/class/power_supply")) {
 						//? Only consider online power supplies of type Battery or UPS
 						//? see kernel docs for details on the file structure and contents
@@ -1257,8 +1257,8 @@ namespace Cpu {
 		}
 		catch (const std::exception& e) {
 			Logger::debug("Cpu::collect() : {}", e.what());
-			if (cread.bad()) throw std::runtime_error("Failed to read /proc/stat");
-			else throw std::runtime_error(fmt::format("Cpu::collect() : {}", e.what()));
+			Logger::warning("Cpu::collect() : {} (continuing with empty CPU data)", e.what());
+			return cpu;
 		}
 
 		if (Config::getB("check_temp") and got_sensors)
@@ -2296,7 +2296,7 @@ namespace Mem {
 						}
 					}
 					else
-						throw std::runtime_error("Failed to read /proc/filesystems");
+						Logger::warning("Failed to read /proc/filesystems; using default fs filter.");
 					diskread.close();
 				}
 
@@ -3136,7 +3136,7 @@ namespace Proc {
 				int i = 0;
 				for (uint64_t times; i < 8 and pread >> times; cputimes += times, i++);
 			}
-			else throw std::runtime_error("Failure to read /proc/stat");
+			else Logger::warning("Failure to read /proc/stat in Proc::collect; per-process CPU unavailable.");
 			pread.close();
 
 			//? Iterate over all pids in /proc
@@ -3311,7 +3311,7 @@ namespace Proc {
 				}
 
 				//? Process cpu usage since last update
-				new_proc.cpu_p = clamp(round(cmult * 1000 * (cpu_t - new_proc.cpu_t) / max((uint64_t)1, cputimes - old_cputimes)) / 10.0, 0.0, 100.0 * Shared::coreCount);
+				new_proc.cpu_p = (cputimes > old_cputimes) ? clamp(round(cmult * 1000 * (cpu_t - new_proc.cpu_t) / (cputimes - old_cputimes)) / 10.0, 0.0, 100.0 * Shared::coreCount) : 0.0;
 
 				//? Process cumulative cpu usage since process start
 				new_proc.cpu_c = (double)cpu_t / max(1.0, (uptime * Shared::clkTck) - new_proc.cpu_s);
@@ -3484,6 +3484,7 @@ namespace Tools {
 			catch (const std::invalid_argument&) {}
 			catch (const std::out_of_range&) {}
 		}
-        throw std::runtime_error(fmt::format("Failed to get uptime from {}", Shared::procPath / "uptime"));
+        Logger::warning("Failed to get uptime from {} (returning 0).", Shared::procPath / "uptime");
+        return 0.0;
 	}
 }
