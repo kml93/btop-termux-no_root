@@ -1960,8 +1960,7 @@ namespace Proc {
 
 			out += (thread_size > 0 ? Mv::l(4) + "Threads: " : "")
 					+ ljust("User:", user_size) + ' '
-					+ rjust((mem_bytes ? "MemB" : "Mem%"), 5) + ' '
-					+ rjust("Cpu%", (show_graphs ? 10 : 5)) + Fx::ub;
+					+ rjust((mem_bytes ? "MemB" : "Mem%"), 5) + Fx::ub;
 		}
 		//* End of redraw block
 
@@ -2133,10 +2132,7 @@ namespace Proc {
 
 			out += (thread_size > 0 ? t_color + rjust(proc_threads_string, thread_size) + ' ' + end : "" )
 				+ g_color + ljust((cmp_greater(p.user.size(), user_size) ? p.user.substr(0, user_size - 1) + '+' : p.user), user_size) + ' '
-				+ m_color + rjust(mem_str, 5) + end + ' '
-				+ (is_selected or is_followed ? "" : Theme::c("inactive_fg")) + (show_graphs ? graph_bg * 5: "")
-				+ (p_graphs.contains(p.pid) ? Mv::l(5) + c_color + p_graphs.at(p.pid)({(p.cpu_p >= 0.1 and p.cpu_p < 5 ? 5ll : (long long)round(p.cpu_p))}, data_same) : "") + end + ' '
-				+ c_color + rjust(cpu_str, 4) + "  " + end;
+				+ m_color + rjust(mem_str, 5) + "  " + end;
 			if (lc++ > height - 5) break;
 			else if (lc > height - 5 and proc_banner_shown) break;
 		}

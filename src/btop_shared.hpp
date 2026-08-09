@@ -373,8 +373,6 @@ namespace Proc {
 		"threads",
 		"user",
 		"memory",
-		"cpu direct",
-		"cpu lazy",
 	};
 
 	//? Translation from process state char to explanative string

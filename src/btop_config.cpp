@@ -104,8 +104,8 @@ namespace Config {
 
 		{"update_ms", 			"#* Update time in milliseconds, recommended 2000 ms or above for better sample times for graphs."},
 
-		{"proc_sorting",		"#* Processes sorting, \"pid\" \"program\" \"arguments\" \"threads\" \"user\" \"memory\" \"cpu lazy\" \"cpu direct\",\n"
-								"#* \"cpu lazy\" sorts top process over time (easier to follow), \"cpu direct\" updates top process directly."},
+		{"proc_sorting",		"#* Processes sorting, \"pid\" \"program\" \"arguments\" \"threads\" \"user\" \"memory\".\n"
+								"#* (cpu lazy / cpu direct removed: per-process CPU% unavailable without root on Android.)"},
 
 		{"proc_reversed",		"#* Reverse sorting order, True or False."},
 
@@ -260,7 +260,7 @@ namespace Config {
 		{"graph_symbol_mem", "default"},
 		{"graph_symbol_net", "default"},
 		{"graph_symbol_proc", "default"},
-		{"proc_sorting", "cpu lazy"},
+		{"proc_sorting", "memory"},
 		{"cpu_graph_upper", "Auto"},
 		{"cpu_graph_lower", "Auto"},
 		{"cpu_sensor", "Auto"},
