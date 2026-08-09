@@ -546,6 +546,7 @@ namespace Cpu {
 		bool data_same
 	) {
 		if (Runner::stopping) return "";
+		if (height <= 4) return ""; // termux-noroot: slim header (height forced to 3) -> draw no CPU content (cores/graphs/meter); external border + clock come from calcSizes (Cpu::box) + Global::clock, independent of this function
 		if (force_redraw) redraw = true;
 		bool show_temps = (Config::getB("check_temp") and got_sensors);
 		bool show_watts = (Config::getB("show_cpu_watts") and supports_watts);
